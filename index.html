@@ -143,34 +143,40 @@ const QUESTION_SECONDS = 20;      // 每題作答秒數
 const READY_SECONDS    = 3;       // 每題開始前「準備」倒數秒數
 const SCORE_MAX = 1000, SCORE_MIN = 600;   // 答對最高分／最低分（越快越高）
 const BONUS = [5, 3, 1];          // 第一、二、三名的學期加分
-const AVATARS = ["🩺","❤️‍🩹","🏃","🍎","🧠","💊","🦷","🥦","💪","🧘","🚑","🧼"];
+const AVATARS = [   // 學生可選的頭像（只能選這些表情符號，不開放上傳照片）
+  "🩺","❤️‍🩹","💊","🩹","🦷","🧠","😷","🌡️","🧼","🚑","🏥","🧬",
+  "🏃","🚴","🏊","🧘","⚽","🏀","🏐","🏸","💪","🏆",
+  "🍎","🍌","🥦","🥕","🍉","🍓","🥑","🥛","🍙","🥗",
+  "🐱","🐶","🐰","🐼","🐨","🐯","🦊","🐸","🐧","🐢","🐬","🦉",
+  "😀","😎","🤓","🥳","😴","🤩"
+];
 /* ═══════════════════════ 設定區結束 ═══════════════════════ */
 </script>
 
 <style>
   :root{
-    --bg:#10233f; --bg2:#183358; --card:#ffffff; --ink:#14233a; --mute:#6b7a90;
-    --accent:#19b39a; --accent2:#ff7a59;
-    --c0:#e4572e; --c1:#2f7de1; --c2:#e0a100; --c3:#2a9d4b;
+    --bg:#56616b; --bg2:#7a8791; --card:#f6f2ec; --ink:#3e4650; --mute:#857f78; --hi:#efe0b8; --paper:#fbf8f3;
+    --accent:#7f9c8c; --accent2:#c08a78;
+    --c0:#b07a6e; --c1:#6f86a0; --c2:#b0965f; --c3:#748f7a;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
-       background:linear-gradient(160deg,var(--bg),var(--bg2));color:#fff;overflow:hidden;user-select:none;-webkit-user-select:none}
+       background:linear-gradient(160deg,var(--bg),var(--bg2));color:#fbf8f3;overflow:hidden;user-select:none;-webkit-user-select:none}
   .view{display:none;height:100%;width:100%}
   .view.on{display:flex}
   button{font-family:inherit;cursor:pointer;border:none}
   .btn{background:var(--accent);color:#fff;font-weight:800;border-radius:14px;padding:.75em 1.4em;font-size:1em;
        box-shadow:0 4px 0 rgba(0,0,0,.25);transition:transform .08s}
   .btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
-  .btn:disabled{background:#8b97a8;cursor:not-allowed;opacity:.7}
+  .btn:disabled{background:#a6a29c;cursor:not-allowed;opacity:.7}
   .btn.ghost{background:rgba(255,255,255,.14);box-shadow:none}
   .btn.warn{background:var(--accent2)}
   .center{flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
   .card{background:var(--card);color:var(--ink);border-radius:20px;padding:22px;width:100%;max-width:440px;
         box-shadow:0 12px 40px rgba(0,0,0,.3)}
-  .msg{color:#ffd6cc;min-height:1.4em;margin-top:10px;font-weight:700}
-  .card .msg{color:#d6401c}
+  .msg{color:#f0d3c8;min-height:1.4em;margin-top:10px;font-weight:700}
+  .card .msg{color:#a5604f}
 
   /* ───────── 學生手機端 ───────── */
   .s-top{position:fixed;top:0;left:0;right:0;height:52px;background:rgba(0,0,0,.28);display:none;
@@ -186,15 +192,15 @@ const AVATARS = ["🩺","❤️‍🩹","🏃","🍎","🧠","💊","🦷","🥦
   #s-login .sub{color:var(--mute);font-size:14px;margin-bottom:14px}
   label.f{display:block;font-size:14px;font-weight:800;color:var(--mute);margin:12px 0 6px}
   select,input[type=number],input[type=password]{width:100%;font-size:20px;font-family:inherit;padding:11px 12px;border-radius:12px;
-       border:2px solid #d5dce6;background:#f6f8fb;color:var(--ink);outline:none}
+       border:2px solid #ddd6cc;background:var(--paper);color:var(--ink);outline:none}
   select:focus,input:focus{border-color:var(--accent)}
-  .namebox{font-size:22px;font-weight:900;padding:12px;border-radius:12px;background:#eaf7f4;color:#0c7c6a;
-           text-align:center;border:2px dashed #9fd9cd}
-  .namebox.bad{background:#fdecea;color:#c0391b;border-color:#f3b4a6;font-size:17px}
-  .namebox.idle{background:#f1f3f6;color:#9aa6b6;border-color:#d5dce6;font-size:17px}
-  .avgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-  .avgrid button{font-size:30px;aspect-ratio:1;border-radius:14px;background:#f1f3f6;border:3px solid transparent}
-  .avgrid button.sel{background:#e3f6f2;border-color:var(--accent);transform:scale(1.06)}
+  .namebox{font-size:22px;font-weight:900;padding:12px;border-radius:12px;background:#e6ede7;color:#5d7a66;
+           text-align:center;border:2px dashed #b5c7ba}
+  .namebox.bad{background:#f4e6e1;color:#a5604f;border-color:#dcbcb1;font-size:17px}
+  .namebox.idle{background:#efebe5;color:#a8a199;border-color:#ddd6cc;font-size:17px}
+  .avgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-height:252px;overflow-y:auto;padding:4px;border-radius:12px;background:#efebe5}
+  .avgrid button{font-size:25px;aspect-ratio:1;border-radius:12px;background:var(--paper);border:3px solid transparent}
+  .avgrid button.sel{background:#e6ede7;border-color:var(--accent);transform:scale(1.06)}
   #joinBtn{width:100%;margin-top:16px;font-size:20px}
   .big-emoji{font-size:84px;line-height:1.1;margin-bottom:10px}
   .h-big{font-size:28px;font-weight:900;margin-bottom:8px}
@@ -220,13 +226,13 @@ const AVATARS = ["🩺","❤️‍🩹","🏃","🍎","🧠","💊","🦷","🥦
   .res-row div{flex:1;background:rgba(255,255,255,.14);border-radius:14px;padding:10px;text-align:center}
   .res-row small{display:block;opacity:.8;font-size:13px}
   .res-row b{font-size:24px}
-  .explain{background:#fff;color:var(--ink);border-radius:16px;padding:14px 16px;width:100%;max-width:440px;
+  .explain{background:var(--card);color:var(--ink);border-radius:16px;padding:14px 16px;width:100%;max-width:440px;
            text-align:left;line-height:1.6;font-size:16px;margin-bottom:18px}
   .explain .tag{display:inline-block;background:var(--accent);color:#fff;font-weight:800;border-radius:8px;
            padding:2px 10px;font-size:13px;margin-bottom:6px}
   .explain .ans{font-weight:900;margin-bottom:6px}
-  body.ok{background:linear-gradient(160deg,#157a4a,#1fa565)}
-  body.ng{background:linear-gradient(160deg,#8f2b1c,#c9472f)}
+  body.ok{background:linear-gradient(160deg,#6a8572,#8fa89b)}
+  body.ng{background:linear-gradient(160deg,#9a6c62,#bf958a)}
 
   /* ───────── 教師投影幕端 ───────── */
   #h-class .grid{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:24px;max-width:900px}
@@ -245,12 +251,12 @@ const AVATARS = ["🩺","❤️‍🩹","🏃","🍎","🧠","💊","🦷","🥦
   .lob-bar #startBtn{font-size:1.9vw}
   #lobbyList{flex:1;overflow-y:auto;display:flex;flex-wrap:wrap;gap:1vw;align-content:flex-start;
              background:rgba(0,0,0,.2);border-radius:20px;padding:1.5vw}
-  .chip{position:relative;background:#fff;color:var(--ink);border-radius:16px;padding:.6vw 1vw;text-align:center;
+  .chip{position:relative;background:var(--card);color:var(--ink);border-radius:16px;padding:.6vw 1vw;text-align:center;
         min-width:7.5vw;animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
   .chip.off{opacity:.45}
   .chip .a{font-size:2.6vw;line-height:1.2}
   .chip .nm{font-size:1.15vw;font-weight:800}
-  .chip .x{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;background:#d6401c;color:#fff;
+  .chip .x{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;background:#b07a6e;color:#fff;
            font-size:14px;font-weight:900;display:none}
   .chip:hover .x{display:block}
   @keyframes pop{from{transform:scale(0)}}
@@ -260,27 +266,27 @@ const AVATARS = ["🩺","❤️‍🩹","🏃","🍎","🧠","💊","🦷","🥦
   .g-head{display:flex;align-items:center;gap:2vw}
   .g-head .qn{font-size:1.5vw;font-weight:800;background:rgba(255,255,255,.14);border-radius:999px;padding:.3em 1em}
   .g-head .cnt{margin-left:auto;font-size:1.6vw;font-weight:800}
-  .g-head .cnt b{font-size:2.4vw;color:#ffe38a}
+  .g-head .cnt b{font-size:2.4vw;color:var(--hi)}
   .timer{--p:100;width:6.2vw;height:6.2vw;border-radius:50%;display:grid;place-items:center;flex:none;
-         background:conic-gradient(#ffe38a calc(var(--p)*1%),rgba(255,255,255,.16) 0)}
+         background:conic-gradient(var(--hi) calc(var(--p)*1%),rgba(255,255,255,.16) 0)}
   .timer span{width:78%;height:78%;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:2.4vw;font-weight:900}
-  .timer.hot{background:conic-gradient(#ff7a59 calc(var(--p)*1%),rgba(255,255,255,.16) 0)}
-  .g-q{background:#fff;color:var(--ink);border-radius:18px;padding:1.6vh 2vw;font-size:2.3vw;font-weight:900;text-align:center;line-height:1.35}
+  .timer.hot{background:conic-gradient(#d4a090 calc(var(--p)*1%),rgba(255,255,255,.16) 0)}
+  .g-q{background:var(--card);color:var(--ink);border-radius:18px;padding:1.6vh 2vw;font-size:2.3vw;font-weight:900;text-align:center;line-height:1.35}
   .g-opts{display:grid;grid-template-columns:1fr 1fr;gap:1.2vh 1.2vw}
   .g-opt{position:relative;border-radius:14px;padding:1.3vh 1.4vw;font-size:1.75vw;font-weight:800;display:flex;align-items:center;gap:1vw;
          transition:opacity .4s,transform .4s}
   .g-opt .shape{font-size:2vw}
   .g-opt .num{margin-left:auto;background:rgba(0,0,0,.28);border-radius:999px;padding:.05em .7em;display:none;font-size:1.4vw}
   .g-opt.dim{opacity:.28}
-  .g-opt.correct{transform:scale(1.02);box-shadow:0 0 0 5px #fff}
-  .g-opt.correct::after{content:"✔ 正確答案";position:absolute;right:1.2vw;top:-1.3vh;background:#fff;color:#157a4a;
+  .g-opt.correct{transform:scale(1.02);box-shadow:0 0 0 5px var(--paper)}
+  .g-opt.correct::after{content:"✔ 正確答案";position:absolute;right:1.2vw;top:-1.3vh;background:#fff;color:#5d7a66;
          font-size:1.05vw;border-radius:999px;padding:.1em .8em;font-weight:900}
   #h-game.revealed .g-opt .num{display:block}
   #h-game.ready .g-opts{visibility:hidden}
   .g-mid{display:none;align-items:center;gap:1.5vw}
   #h-game.revealed .g-mid{display:flex}
   .g-exp{flex:1;background:rgba(255,255,255,.14);border-radius:14px;padding:1.1vh 1.4vw;font-size:1.35vw;line-height:1.5}
-  .g-exp b{color:#ffe38a}
+  .g-exp b{color:var(--hi)}
   .g-mid .btn{font-size:1.7vw;white-space:nowrap}
   #track{flex:1;min-height:0;display:grid;gap:4px 1.5vw;background:rgba(0,0,0,.22);border-radius:18px;padding:1.2vh 1vw;--lh:36px}
   .lane{position:relative;border-bottom:2px dashed rgba(255,255,255,.16);min-height:0;--rw:calc(var(--lh)*5.4)}
@@ -289,12 +295,12 @@ const AVATARS = ["🩺","❤️‍🩹","🏃","🍎","🧠","💊","🦷","🥦
           gap:.3em;transition:left 1.6s cubic-bezier(.2,.9,.25,1.15);white-space:nowrap}
   .runner .nm{font-size:calc(var(--lh)*.38);font-weight:800;overflow:hidden;text-overflow:ellipsis;text-align:right;
           background:rgba(0,0,0,.35);border-radius:999px;padding:.05em .6em;max-width:calc(var(--rw) - var(--lh)*1.1)}
-  .runner .nm i{font-style:normal;color:#ffe38a;margin-left:.4em}
+  .runner .nm i{font-style:normal;color:var(--hi);margin-left:.4em}
   .runner .av{font-size:calc(var(--lh)*.72);line-height:1;flex:none}
-  .lane.done .runner .av{filter:drop-shadow(0 0 6px #ffe38a)}
+  .lane.done .runner .av{filter:drop-shadow(0 0 6px var(--hi))}
   .lane.off .runner{opacity:.4}
 
-  #finalOverlay{position:fixed;inset:0;background:rgba(8,18,35,.94);display:none;flex-direction:column;align-items:center;
+  #finalOverlay{position:fixed;inset:0;background:rgba(62,70,80,.95);display:none;flex-direction:column;align-items:center;
                 justify-content:flex-end;z-index:20;overflow:hidden}
   #finalOverlay.on{display:flex}
   #finalOverlay h1{position:absolute;top:4vh;font-size:3.4vw;letter-spacing:.1em}
@@ -309,9 +315,9 @@ const AVATARS = ["🩺","❤️‍🩹","🏃","🍎","🧠","💊","🦷","🥦
             transform:translateY(100%);animation:rise .9s cubic-bezier(.2,.9,.3,1) forwards}
   .pod .bar .rk{font-size:4vw;font-weight:900}
   .pod .bar .bn{margin-top:1vh;background:#fff;color:var(--ink);border-radius:999px;padding:.3em 1em;font-size:1.5vw;font-weight:900}
-  .pod.p1 .bar{height:34vh;background:linear-gradient(#ffd54a,#e0a100);animation-delay:1.6s}
-  .pod.p2 .bar{height:25vh;background:linear-gradient(#d9e1ea,#9fadbd);animation-delay:.9s}
-  .pod.p3 .bar{height:18vh;background:linear-gradient(#f0a76c,#c56a2a);animation-delay:.2s}
+  .pod.p1 .bar{height:34vh;background:linear-gradient(#e3cf9d,#bfa36a);animation-delay:1.6s}
+  .pod.p2 .bar{height:25vh;background:linear-gradient(#dcdfe2,#aab2b9);animation-delay:.9s}
+  .pod.p3 .bar{height:18vh;background:linear-gradient(#ddb39c,#b78a72);animation-delay:.2s}
   .pod.p1 .who{animation-delay:2.4s} .pod.p2 .who{animation-delay:1.7s} .pod.p3 .who{animation-delay:1s}
   @keyframes rise{to{transform:translateY(0)}}
   @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
@@ -319,6 +325,8 @@ const AVATARS = ["🩺","❤️‍🩹","🏃","🍎","🧠","💊","🦷","🥦
   .final-btns .btn{font-size:1.4vw}
   .confetti{position:absolute;top:-8vh;font-size:2.4vw;animation:fall linear infinite;pointer-events:none}
   @keyframes fall{to{transform:translateY(120vh) rotate(540deg)}}
+  #muteBtn{position:fixed;right:14px;bottom:14px;z-index:40;background:rgba(251,248,243,.18);color:#fbf8f3;
+           border-radius:999px;padding:.45em 1em;font-size:15px;font-weight:800;backdrop-filter:blur(4px)}
   #v-setup .card{max-width:640px;text-align:left;line-height:1.8}
   #v-setup code{background:#eef2f7;padding:1px 6px;border-radius:6px}
 </style>
@@ -449,6 +457,7 @@ const AVATARS = ["🩺","❤️‍🩹","🏃","🍎","🧠","💊","🦷","🥦
   <div id="track"></div>
 </div>
 
+<button id="muteBtn" type="button" style="display:none"></button>
 <div id="finalOverlay">
   <h1>🏆 頒獎典禮 🏆</h1>
   <div class="final-btns">
@@ -502,12 +511,94 @@ function boot(){
 }
 
 /* ══════════════════════════════════════════════
+   背景音樂（只在教師投影幕播放；由瀏覽器即時合成，沒有外部音檔、沒有版權問題）
+   大廳：輕柔琶音｜準備倒數：嗶聲｜作答中：低沉心跳節奏，最後 5 秒加快｜公布答案：柔和鐘聲後安靜｜頒獎：溫和號角
+   ══════════════════════════════════════════════ */
+const Music = (() => {
+  let ctx = null, master = null, mode = "off", next = 0, step = 0, remain = 99;
+  let muted = false;
+  try{ muted = localStorage.getItem("race_mute") === "1"; }catch(e){}
+  function ensure(){
+    if(!ctx){
+      const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return false;
+      ctx = new AC(); master = ctx.createGain(); master.gain.value = muted ? 0 : 0.55; master.connect(ctx.destination);
+    }
+    if(ctx.state === "suspended") ctx.resume();
+    return true;
+  }
+  function tone(f, t, dur, type, vol, atk){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || "sine"; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + (atk || 0.01));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  const LOBBY = [261.6, 329.6, 392.0, 440.0, 392.0, 329.6, 293.7, 329.6];
+  function schedule(t){
+    if(mode === "lobby"){
+      tone(LOBBY[step % 8], t, 1.6, "triangle", 0.05, 0.08);
+      if(step % 8 === 0) tone(130.8, t, 5.5, "sine", 0.045, 0.6);
+      if(step % 8 === 4) tone(110.0, t, 5.5, "sine", 0.04, 0.6);
+      next = t + 0.75;
+    }else if(mode === "question"){
+      const fast = remain <= 5, beat = fast ? 0.32 : 0.6;
+      tone(fast ? 70 : 58, t, 0.22, "sine", 0.32);                        // 心跳（重）
+      tone(fast ? 70 : 58, t + beat * 0.32, 0.18, "sine", 0.18);          // 心跳（輕）
+      const bass = [110, 110, 103.8, 98][step % 4];
+      tone(fast ? bass * 1.5 : bass, t, beat * 0.9, "triangle", 0.05, 0.03); // 低音持續
+      tone(fast ? 1500 : 1100, t, 0.04, "square", fast ? 0.025 : 0.012);  // 滴答
+      next = t + beat;
+    }else{
+      next = t + 0.1;
+    }
+    step++;
+  }
+  setInterval(() => {
+    if(!ctx || mode === "off" || ctx.state !== "running") return;
+    if(next < ctx.currentTime) next = ctx.currentTime + 0.05;
+    while(next < ctx.currentTime + 0.25) schedule(next);
+  }, 60);
+  function chime(){
+    const t = ctx.currentTime + 0.05;
+    [523.3, 659.3, 784.0].forEach((f, i) => tone(f, t + i * 0.14, 1.4, "sine", 0.14, 0.02));
+  }
+  function fanfare(){
+    const t = ctx.currentTime + 0.1;
+    [392.0, 523.3, 659.3, 784.0].forEach((f, i) => tone(f, t + i * 0.18, 0.5, "triangle", 0.12, 0.02));
+    [523.3, 659.3, 784.0, 1046.5].forEach(f => tone(f, t + 0.8, 2.6, "sine", 0.08, 0.1));
+  }
+  return {
+    unlock(){ ensure(); },
+    setMode(m){
+      if(m === mode) return; mode = m; step = 0;
+      if(!ensure()) return;
+      next = ctx.currentTime + 0.05;
+      if(m === "question") tone(880, ctx.currentTime + 0.02, 0.35, "sine", 0.16);
+      if(m === "reveal") chime();
+      if(m === "final") fanfare();
+    },
+    setRemain(r){ remain = r; },
+    beep(){ if(ensure()) tone(660, ctx.currentTime + 0.02, 0.18, "sine", 0.14); },
+    toggle(){
+      muted = !muted; try{ localStorage.setItem("race_mute", muted ? "1" : "0"); }catch(e){}
+      if(ensure()) master.gain.setTargetAtTime(muted ? 0 : 0.55, ctx.currentTime, 0.05);
+      return muted;
+    },
+    isMuted(){ return muted; }
+  };
+})();
+
+/* ══════════════════════════════════════════════
    教師投影幕端
    ══════════════════════════════════════════════ */
 const H = { classId:null, ref:null, state:null, players:{}, answers:{}, revealing:false, timer:null, lanes:{}, podiumShown:false, clearArmed:false };
 
 function hostBoot(){
   document.body.classList.add("host");
+  document.addEventListener("pointerdown", () => Music.unlock());
+  const mb = $("muteBtn"); mb.style.display = "block";
+  const paintMute = () => { mb.textContent = Music.isMuted() ? "🔇 音樂關" : "🔊 音樂開"; };
+  paintMute(); mb.onclick = () => { Music.toggle(); paintMute(); };
   $("gateBtn").onclick = () => {
     if($("gatePin").value === String(HOST_PIN)){ sessionStorage.setItem("race_host_ok","1"); hostClassPick(); }
     else $("gateMsg").textContent = "密碼不正確";
@@ -542,6 +633,7 @@ function hostClassPick(){
 function hostLeave(){
   if(H.ref){ H.ref.child("state").off(); H.ref.child("players").off(); H.ref.child("answers").off(); }
   if(H.timer) clearInterval(H.timer);
+  Music.setMode("off");
   H.ref = null; H.state = null; H.players = {}; H.answers = {}; H.lanes = {}; H.podiumShown = false;
   $("track").innerHTML = ""; $("finalOverlay").classList.remove("on");
 }
@@ -585,8 +677,10 @@ function hostRender(){
   const st = H.state; if(!st) return;
   if(st.phase === "lobby"){
     $("finalOverlay").classList.remove("on"); H.podiumShown = false;
-    show("h-lobby"); renderLobby(); return;
+    show("h-lobby"); renderLobby(); Music.setMode("lobby"); return;
   }
+  if(st.phase === "reveal") Music.setMode("reveal");
+  if(st.phase === "final") Music.setMode("final");
   show("h-game"); renderGame();
   if(st.phase === "final"){
     if(!H.podiumShown){ H.podiumShown = true; renderPodium(); $("finalOverlay").classList.add("on"); }
@@ -679,7 +773,9 @@ function hostTick(){
   const st = H.state; if(!st || st.phase !== "question" || !st.startAt) return;
   const es = st.startAt + LEAD_MS, n = now(), g = $("h-game"), t = $("hTimer");
   if(n < es){
-    g.classList.add("ready"); $("hTimerNum").textContent = Math.ceil((es - n) / 1000);
+    const sec = Math.ceil((es - n) / 1000);
+    g.classList.add("ready"); $("hTimerNum").textContent = sec;
+    Music.setMode("ready"); if(H.lastBeep !== st.qIndex + "-" + sec){ H.lastBeep = st.qIndex + "-" + sec; Music.beep(); }
     t.style.setProperty("--p", 100); t.classList.remove("hot");
   }else{
     g.classList.remove("ready");
@@ -687,6 +783,7 @@ function hostTick(){
     $("hTimerNum").textContent = Math.ceil(rem / 1000);
     t.style.setProperty("--p", (rem / T_MS * 100).toFixed(1));
     t.classList.toggle("hot", rem <= 5000);
+    Music.setMode("question"); Music.setRemain(rem / 1000);
     if(rem <= 0) hostReveal();
   }
 }
