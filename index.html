@@ -643,7 +643,7 @@ function hostEnter(c){
   H.classId = c; H.ref = db.ref("race/" + c);
   // 學生加入用的網址（去掉 ?role=host，帶上班級）
   const url = location.origin + location.pathname + "?class=" + encodeURIComponent(c);
-  $("lobCls").textContent = c + " 班";
+  $("lobCls").textContent = /班$/.test(c) ? c : c + " 班";
   $("lobUrl").textContent = url;
   const box = $("qrBox"); box.innerHTML = "";
   if(typeof QRCode !== "undefined") new QRCode(box, { text:url, width:400, height:400, correctLevel:QRCode.CorrectLevel.M });
