@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>健康與護理｜期末考全班同步闖關賽跑</title>
+
+<script>
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  設定區：老師只需要修改這一段（①～⑤），其餘程式碼不用動          ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* ① Firebase 設定：把 Firebase 主控台給你的 firebaseConfig 整段貼進來取代 */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBGGd9ihOTQGTpV1efQnD1EkXxNT26gX8M",
+  authDomain: "health-race-31dac.firebaseapp.com",
+  databaseURL: "https://health-race-31dac-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "health-race-31dac",
+  storageBucket: "health-race-31dac.firebasestorage.app",
+  messagingSenderId: "992496990315",
+  appId: "1:992496990315:web:981bbe42802afeb685192e"
+};
+
+/* ② 教師端密碼：開啟 ?role=host 時要輸入，避免學生自己進教師端 */
+const HOST_PIN = "594074";
+
+/* ③ 各班名單：{ "班級": { "座號": "姓名" } }
+      班級名稱可用中文（例如 "觀光一甲"），但不可包含 . $ # [ ] / 這些符號 */
+const STUDENT_ROSTER = {
+  "測試班": { "1": "測試一號", "2": "測試二號", "3": "測試三號", "4": "測試四號", "5": "測試五號" },
+  "資電一甲": { "1": "王○潔", "2": "王○涵", "3": "張○凱", "4": "張○倩", "5": "陳○中", "6": "顧○帆", "7": "林○華", "8": "陳○勲", "9": "覃○樂", "10": "劉○宏", "11": "盧○佑" },
+  "資電一乙": { "1": "尤○○祖", "2": "方○宇", "3": "胡○敏", "4": "張○奕", "5": "黃○辰", "6": "潘○恩", "10": "趙○皓" },
+  "電機一甲": { "1": "尤○恩", "2": "尤○翔", "3": "石○宥", "4": "吳○宇", "5": "李○宏", "6": "林○杰", "7": "林○浩", "8": "邵○佑", "9": "張○程", "10": "張○意", "11": "陳○弘", "12": "陳○璟", "13": "曾○貴", "14": "黃○傑", "15": "黃○雄", "16": "黃○男", "17": "黃○佑", "18": "盧○宥", "19": "賴○恩", "20": "謝○翔", "21": "謝○豪", "22": "郭○昊", "23": "李○恩" },
+  "餐管一甲": { "1": "尤○琪", "2": "方○", "3": "宋○睿", "4": "李○豐", "5": "孫○均", "6": "張○如", "8": "陳○錡", "9": "曾○祥", "10": "黃○庭", "11": "黃○翔", "13": "趙○馨", "14": "趙○", "15": "鄭○潔", "16": "韓○佳", "18": "詹○斌" },
+  "餐管一乙": { "2": "吳○遠", "3": "吳○翰", "4": "巫○純", "5": "李○恩", "6": "沈○穎", "7": "林○妘", "8": "柯○妏", "11": "郭○婷", "12": "黃○樂", "13": "楊○承", "14": "董○瑜", "15": "潘○文", "16": "鄭○琪", "17": "賴○岫", "18": "邱○翰" },
+  "觀光一甲": { "1": "宋○毓", "2": "宋○豪", "3": "林○崴", "5": "黃○玲", "6": "楊○順", "7": "葉○勛", "8": "潘○任", "9": "鄭○澔", "10": "謝○潔", "11": "韓○緁", "12": "何○斌", "13": "曹○璇" },
+  "資處一甲": { "1": "尤○閔", "2": "王○晴", "3": "古○君", "4": "高○耀", "6": "郭○琳", "7": "華○甄", "8": "黃○琦", "9": "董○瞳", "10": "詹○恩", "11": "趙○恩", "12": "羅○妍" },
+  "普高二甲": { "1": "吳○綺", "2": "吳○瑄", "3": "杜○米", "4": "林○芩", "5": "林○妏", "6": "洪○薰", "7": "張○婕", "8": "陳○凱", "9": "陳○杰", "10": "謝○琪", "11": "龔○沁", "12": "林○毅", "13": "盧○慧", "14": "吳○靜" }
+};
+
+/* ④ 題庫：question 題目、options 四個選項、answer 正確答案索引（0=第一個選項）、
+      explain 簡報重點解析（結算時顯示在學生手機與投影幕） */
+const QUIZ_DATA = [
+  /* ───── 1-2 健康生活好體位（Canva 簡報） ───── */
+  {
+    question: "BMI（身體質量指數）的計算方式是？",
+    options: ["身高（公分）÷ 體重（公斤）", "體重（公斤）÷ 身高（公尺）的平方", "體重（公斤）× 身高（公尺）", "腰圍 ÷ 臀圍"],
+    answer: 1,
+    explain: "BMI＝體重（kg）÷ 身高（m）²。BMI 越高，罹患肥胖相關疾病的機率越高。"
+  },
+  {
+    question: "兩個人 BMI 一模一樣，體態卻完全不同。這說明 BMI 有什麼限制？",
+    options: ["BMI 只適用於女生", "BMI 會隨心情改變", "BMI 看不出脂肪和肌肉各占多少", "BMI 只能測量小孩"],
+    answer: 2,
+    explain: "BMI 只用身高、體重計算，無法區分脂肪與肌肉，所以還要搭配體脂率、腰臀比等指標一起看。"
+  },
+  {
+    question: "「體脂率」指的是什麼？",
+    options: ["身體脂肪重量占體重的百分比", "一天吃進的脂肪克數", "血液中的膽固醇濃度", "腰圍除以身高"],
+    answer: 0,
+    explain: "體脂率＝身體脂肪重量占體重的百分比。想減肥時，看體脂率比只看 BMI 更準。"
+  },
+  {
+    question: "體脂肪分成內臟脂肪和皮下脂肪。「內臟脂肪」的功能是？",
+    options: ["絕熱、儲存餘糧", "幫助消化食物", "製造紅血球", "保護、支撐、固定內臟"],
+    answer: 3,
+    explain: "內臟脂肪：保護、支撐、固定內臟；皮下脂肪：絕熱、儲存「餘糧」。"
+  },
+  {
+    question: "想要控制體重，下列哪一個關係才正確？",
+    options: ["攝取熱量 ＞ 基礎代謝率＋活動量", "基礎代謝率＋活動量 ＞ 攝取熱量", "只要少吃，基礎代謝率不重要", "只要多喝水，熱量不用管"],
+    answer: 1,
+    explain: "基礎代謝率＋活動量 ＞ 攝取熱量，才能控制體重。只靠少吃，也要記得基礎代謝率會跟著下降。"
+  },
+
+  /* ───── 傳染病（電腦簡報：第 3 章、登革熱、漢他病毒） ───── */
+  {
+    question: "預防登革熱「最有效」的方法是？",
+    options: ["多喝水、多休息", "勤戴口罩", "平時做好環境整理，清除病媒蚊孳生源", "吃熟食、煮沸水"],
+    answer: 2,
+    explain: "登革熱靠病媒蚊叮咬傳播。最有效的預防是巡、倒、清、刷：倒掉積水、清除不要的容器、刷除蟲卵。"
+  },
+  {
+    question: "預防漢他病毒，最重要的措施是？",
+    options: ["滅鼠、清潔環境", "接種流感疫苗", "避免生吃海鮮", "避免共用毛巾"],
+    answer: 0,
+    explain: "漢他病毒的天然宿主是鼠類（自己沒有症狀），所以要做好滅鼠與環境清潔。"
+  },
+  {
+    question: "使用酒精乾洗手時，建議的酒精濃度是多少？",
+    options: ["30%", "50%", "75%", "100%"],
+    answer: 2,
+    explain: "乾洗手建議酒精濃度 75%。但乾洗手無法清除髒汙，效果不如用肥皂洗手。"
+  },
+  {
+    question: "肺結核的「都治計畫」，強調的服藥原則是？",
+    options: ["症狀好了就可以停藥", "送藥到手、服藥入口、吞下再走", "由家人自行決定什麼時候吃藥", "一週吃一次就好"],
+    answer: 1,
+    explain: "都治計畫由受過訓練的關懷員（非家屬）看著病人吃藥，確保規律服藥，避免變成抗藥性結核病。"
+  },
+  {
+    question: "和一般感冒相比，「流感」的特徵是？",
+    options: ["症狀漸進、通常微燒", "只有打噴嚏、流鼻水", "突然發作，常高燒 38 度以上、全身倦怠、肌肉痠痛", "不會傳染給別人"],
+    answer: 2,
+    explain: "流感由流感病毒引起，突發且嚴重、全身性症狀明顯；一般感冒由鼻病毒、腺病毒等引起，症狀漸進、較輕微。"
+  },
+
+  /* ───── 1-4 慢性病請不要來（Canva 簡報） ───── */
+  {
+    question: "代謝症候群有 5 項危險因子，符合幾項（含）以上就是代謝症候群？",
+    options: ["1 項", "2 項", "3 項", "5 項全部"],
+    answer: 2,
+    explain: "腰圍、血壓、空腹血糖、三酸甘油酯、高密度膽固醇，5 項中符合 3 項（含）以上就是代謝症候群。它是慢性病的「前哨站」。"
+  },
+  {
+    question: "代謝症候群的腰圍標準：男生、女生分別不能超過多少？",
+    options: ["男 80 公分、女 70 公分", "男 90 公分、女 80 公分", "男 100 公分、女 90 公分", "男女都是 85 公分"],
+    answer: 1,
+    explain: "男生腰圍 ≧ 90 公分、女生 ≧ 80 公分就算危險因子。量法：皮尺繞腸骨上緣與肋骨下緣中點，吐氣後量。"
+  },
+  {
+    question: "在家量血壓的「722 原則」是什麼意思？",
+    options: ["連續 7 天、早晚各量 1 回、每回量 2 次", "每天量 7 次、休息 2 分鐘、量 2 隻手", "7 點量、22 點量", "一週量 7 次、2 週回診 2 次"],
+    answer: 0,
+    explain: "722 原則：連續 7 天、早晚各量 1 回、每回量 2 次。量之前先靜坐休息 5 分鐘，手臂和心臟同高。"
+  },
+  {
+    question: "胸口劇烈疼痛、冒冷汗，休息後也沒有改善，最可能是什麼狀況？該怎麼做？",
+    options: ["心絞痛，休息幾分鐘就好", "胃痛，吃胃藥就好", "肌肉拉傷，熱敷就好", "心肌梗塞，馬上打 119"],
+    answer: 3,
+    explain: "心絞痛：血管變窄，休息幾分鐘會緩解；心肌梗塞：血管完全塞住，劇烈胸痛、冒冷汗，休息也不會好，要立刻打 119！"
+  },
+  {
+    question: "中風口訣「臨微不亂」中的「微」，要觀察什麼？",
+    options: ["微微發燒", "微笑時嘴角歪斜", "呼吸微弱", "手指微微發抖"],
+    answer: 1,
+    explain: "臨：臨時手腳無力；微：微笑嘴角歪斜；不：不能清楚說話；亂：亂了快打 119，並記下發作時間、立刻送醫。"
+  }
+];
+
+/* ⑤ 其他可調整項目 */
+const QUESTION_SECONDS = 20;      // 每題作答秒數
+const READY_SECONDS    = 3;       // 每題開始前「準備」倒數秒數
+const SCORE_MAX = 1000, SCORE_MIN = 600;   // 答對最高分／最低分（越快越高）
+const BONUS = [5, 3, 1];          // 第一、二、三名的學期加分
+const AVATARS = ["🩺","❤️‍🩹","🏃","🍎","🧠","💊","🦷","🥦","💪","🧘","🚑","🧼"];
+/* ═══════════════════════ 設定區結束 ═══════════════════════ */
+</script>
+
+<style>
+  :root{
+    --bg:#10233f; --bg2:#183358; --card:#ffffff; --ink:#14233a; --mute:#6b7a90;
+    --accent:#19b39a; --accent2:#ff7a59;
+    --c0:#e4572e; --c1:#2f7de1; --c2:#e0a100; --c3:#2a9d4b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+       background:linear-gradient(160deg,var(--bg),var(--bg2));color:#fff;overflow:hidden;user-select:none;-webkit-user-select:none}
+  .view{display:none;height:100%;width:100%}
+  .view.on{display:flex}
+  button{font-family:inherit;cursor:pointer;border:none}
+  .btn{background:var(--accent);color:#fff;font-weight:800;border-radius:14px;padding:.75em 1.4em;font-size:1em;
+       box-shadow:0 4px 0 rgba(0,0,0,.25);transition:transform .08s}
+  .btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+  .btn:disabled{background:#8b97a8;cursor:not-allowed;opacity:.7}
+  .btn.ghost{background:rgba(255,255,255,.14);box-shadow:none}
+  .btn.warn{background:var(--accent2)}
+  .center{flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
+  .card{background:var(--card);color:var(--ink);border-radius:20px;padding:22px;width:100%;max-width:440px;
+        box-shadow:0 12px 40px rgba(0,0,0,.3)}
+  .msg{color:#ffd6cc;min-height:1.4em;margin-top:10px;font-weight:700}
+  .card .msg{color:#d6401c}
+
+  /* ───────── 學生手機端 ───────── */
+  .s-top{position:fixed;top:0;left:0;right:0;height:52px;background:rgba(0,0,0,.28);display:none;
+         align-items:center;justify-content:space-between;padding:0 14px;font-weight:800;z-index:5}
+  .s-top.on{display:flex}
+  .s-top .who{display:flex;align-items:center;gap:8px;font-size:17px}
+  .s-top .who span:first-child{font-size:26px}
+  .s-top .pts{background:#fff;color:var(--ink);border-radius:999px;padding:4px 12px;font-size:15px}
+  body.student .view{padding-top:52px}
+  #s-login{padding-top:0!important;overflow-y:auto;align-items:flex-start;justify-content:center}
+  #s-login .card{margin:18px 14px}
+  #s-login h1{font-size:22px;margin-bottom:4px}
+  #s-login .sub{color:var(--mute);font-size:14px;margin-bottom:14px}
+  label.f{display:block;font-size:14px;font-weight:800;color:var(--mute);margin:12px 0 6px}
+  select,input[type=number],input[type=password]{width:100%;font-size:20px;font-family:inherit;padding:11px 12px;border-radius:12px;
+       border:2px solid #d5dce6;background:#f6f8fb;color:var(--ink);outline:none}
+  select:focus,input:focus{border-color:var(--accent)}
+  .namebox{font-size:22px;font-weight:900;padding:12px;border-radius:12px;background:#eaf7f4;color:#0c7c6a;
+           text-align:center;border:2px dashed #9fd9cd}
+  .namebox.bad{background:#fdecea;color:#c0391b;border-color:#f3b4a6;font-size:17px}
+  .namebox.idle{background:#f1f3f6;color:#9aa6b6;border-color:#d5dce6;font-size:17px}
+  .avgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .avgrid button{font-size:30px;aspect-ratio:1;border-radius:14px;background:#f1f3f6;border:3px solid transparent}
+  .avgrid button.sel{background:#e3f6f2;border-color:var(--accent);transform:scale(1.06)}
+  #joinBtn{width:100%;margin-top:16px;font-size:20px}
+  .big-emoji{font-size:84px;line-height:1.1;margin-bottom:10px}
+  .h-big{font-size:28px;font-weight:900;margin-bottom:8px}
+  .h-sub{font-size:17px;opacity:.85;line-height:1.6}
+  .pulse{animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{50%{transform:scale(1.08)}}
+  .count-num{font-size:120px;font-weight:900;line-height:1}
+  #s-answer{flex-direction:column;padding-left:10px;padding-right:10px;padding-bottom:10px}
+  .s-qbar{display:flex;align-items:center;justify-content:space-between;padding:10px 4px;font-weight:800}
+  .s-qbar .t{background:#fff;color:var(--ink);border-radius:999px;min-width:54px;text-align:center;padding:4px 10px;font-size:20px}
+  .s-qtext{font-size:17px;font-weight:700;line-height:1.45;padding:0 4px 10px}
+  .s-opts{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:10px;min-height:0}
+  .s-opts button{border-radius:18px;color:#fff;font-weight:800;font-size:17px;line-height:1.35;padding:10px;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+        box-shadow:0 6px 0 rgba(0,0,0,.25)}
+  .s-opts button:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+  .s-opts .shape{font-size:34px;line-height:1}
+  .o0{background:var(--c0)} .o1{background:var(--c1)} .o2{background:var(--c2)} .o3{background:var(--c3)}
+  #s-result{flex-direction:column;align-items:center;padding-left:16px;padding-right:16px;overflow-y:auto}
+  .res-head{margin-top:18px;font-size:30px;font-weight:900}
+  .res-gain{font-size:54px;font-weight:900;margin:4px 0}
+  .res-row{display:flex;gap:10px;width:100%;max-width:440px;margin:10px 0}
+  .res-row div{flex:1;background:rgba(255,255,255,.14);border-radius:14px;padding:10px;text-align:center}
+  .res-row small{display:block;opacity:.8;font-size:13px}
+  .res-row b{font-size:24px}
+  .explain{background:#fff;color:var(--ink);border-radius:16px;padding:14px 16px;width:100%;max-width:440px;
+           text-align:left;line-height:1.6;font-size:16px;margin-bottom:18px}
+  .explain .tag{display:inline-block;background:var(--accent);color:#fff;font-weight:800;border-radius:8px;
+           padding:2px 10px;font-size:13px;margin-bottom:6px}
+  .explain .ans{font-weight:900;margin-bottom:6px}
+  body.ok{background:linear-gradient(160deg,#157a4a,#1fa565)}
+  body.ng{background:linear-gradient(160deg,#8f2b1c,#c9472f)}
+
+  /* ───────── 教師投影幕端 ───────── */
+  #h-class .grid{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:24px;max-width:900px}
+  #h-class .grid button{font-size:32px;padding:.7em 1.3em}
+  #h-lobby{flex-direction:row;padding:3vh 3vw;gap:3vw}
+  .lob-left{width:34vw;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .lob-left h1{font-size:2.6vw;margin-bottom:.4em}
+  .lob-left .cls{font-size:2vw;background:var(--accent);border-radius:999px;padding:.2em 1em;font-weight:900;margin-bottom:1em}
+  #qrBox{background:#fff;padding:16px;border-radius:20px;line-height:0}
+  #qrBox img,#qrBox canvas{width:22vw!important;height:22vw!important;max-width:44vh;max-height:44vh}
+  .lob-url{margin-top:1em;font-size:1.05vw;opacity:.8;word-break:break-all;max-width:30vw}
+  .lob-right{flex:1;display:flex;flex-direction:column;min-width:0}
+  .lob-bar{display:flex;align-items:center;gap:1vw;margin-bottom:1.5vh;flex-wrap:wrap}
+  .lob-bar .n{font-size:2.2vw;font-weight:900;margin-right:auto}
+  .lob-bar .btn{font-size:1.3vw}
+  .lob-bar #startBtn{font-size:1.9vw}
+  #lobbyList{flex:1;overflow-y:auto;display:flex;flex-wrap:wrap;gap:1vw;align-content:flex-start;
+             background:rgba(0,0,0,.2);border-radius:20px;padding:1.5vw}
+  .chip{position:relative;background:#fff;color:var(--ink);border-radius:16px;padding:.6vw 1vw;text-align:center;
+        min-width:7.5vw;animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+  .chip.off{opacity:.45}
+  .chip .a{font-size:2.6vw;line-height:1.2}
+  .chip .nm{font-size:1.15vw;font-weight:800}
+  .chip .x{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;background:#d6401c;color:#fff;
+           font-size:14px;font-weight:900;display:none}
+  .chip:hover .x{display:block}
+  @keyframes pop{from{transform:scale(0)}}
+  .empty{opacity:.7;font-size:1.5vw;margin:auto}
+
+  #h-game{flex-direction:column;padding:2vh 2.5vw;gap:1.4vh}
+  .g-head{display:flex;align-items:center;gap:2vw}
+  .g-head .qn{font-size:1.5vw;font-weight:800;background:rgba(255,255,255,.14);border-radius:999px;padding:.3em 1em}
+  .g-head .cnt{margin-left:auto;font-size:1.6vw;font-weight:800}
+  .g-head .cnt b{font-size:2.4vw;color:#ffe38a}
+  .timer{--p:100;width:6.2vw;height:6.2vw;border-radius:50%;display:grid;place-items:center;flex:none;
+         background:conic-gradient(#ffe38a calc(var(--p)*1%),rgba(255,255,255,.16) 0)}
+  .timer span{width:78%;height:78%;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:2.4vw;font-weight:900}
+  .timer.hot{background:conic-gradient(#ff7a59 calc(var(--p)*1%),rgba(255,255,255,.16) 0)}
+  .g-q{background:#fff;color:var(--ink);border-radius:18px;padding:1.6vh 2vw;font-size:2.3vw;font-weight:900;text-align:center;line-height:1.35}
+  .g-opts{display:grid;grid-template-columns:1fr 1fr;gap:1.2vh 1.2vw}
+  .g-opt{position:relative;border-radius:14px;padding:1.3vh 1.4vw;font-size:1.75vw;font-weight:800;display:flex;align-items:center;gap:1vw;
+         transition:opacity .4s,transform .4s}
+  .g-opt .shape{font-size:2vw}
+  .g-opt .num{margin-left:auto;background:rgba(0,0,0,.28);border-radius:999px;padding:.05em .7em;display:none;font-size:1.4vw}
+  .g-opt.dim{opacity:.28}
+  .g-opt.correct{transform:scale(1.02);box-shadow:0 0 0 5px #fff}
+  .g-opt.correct::after{content:"✔ 正確答案";position:absolute;right:1.2vw;top:-1.3vh;background:#fff;color:#157a4a;
+         font-size:1.05vw;border-radius:999px;padding:.1em .8em;font-weight:900}
+  #h-game.revealed .g-opt .num{display:block}
+  #h-game.ready .g-opts{visibility:hidden}
+  .g-mid{display:none;align-items:center;gap:1.5vw}
+  #h-game.revealed .g-mid{display:flex}
+  .g-exp{flex:1;background:rgba(255,255,255,.14);border-radius:14px;padding:1.1vh 1.4vw;font-size:1.35vw;line-height:1.5}
+  .g-exp b{color:#ffe38a}
+  .g-mid .btn{font-size:1.7vw;white-space:nowrap}
+  #track{flex:1;min-height:0;display:grid;gap:4px 1.5vw;background:rgba(0,0,0,.22);border-radius:18px;padding:1.2vh 1vw;--lh:36px}
+  .lane{position:relative;border-bottom:2px dashed rgba(255,255,255,.16);min-height:0;--rw:calc(var(--lh)*5.4)}
+  .lane::after{content:"🏁";position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:calc(var(--lh)*.5);opacity:.6}
+  .runner{position:absolute;top:50%;left:0;width:var(--rw);transform:translateY(-50%);display:flex;align-items:center;justify-content:flex-end;
+          gap:.3em;transition:left 1.6s cubic-bezier(.2,.9,.25,1.15);white-space:nowrap}
+  .runner .nm{font-size:calc(var(--lh)*.38);font-weight:800;overflow:hidden;text-overflow:ellipsis;text-align:right;
+          background:rgba(0,0,0,.35);border-radius:999px;padding:.05em .6em;max-width:calc(var(--rw) - var(--lh)*1.1)}
+  .runner .nm i{font-style:normal;color:#ffe38a;margin-left:.4em}
+  .runner .av{font-size:calc(var(--lh)*.72);line-height:1;flex:none}
+  .lane.done .runner .av{filter:drop-shadow(0 0 6px #ffe38a)}
+  .lane.off .runner{opacity:.4}
+
+  #finalOverlay{position:fixed;inset:0;background:rgba(8,18,35,.94);display:none;flex-direction:column;align-items:center;
+                justify-content:flex-end;z-index:20;overflow:hidden}
+  #finalOverlay.on{display:flex}
+  #finalOverlay h1{position:absolute;top:4vh;font-size:3.4vw;letter-spacing:.1em}
+  .podium{display:flex;align-items:flex-end;gap:1.5vw;height:66vh;position:relative;z-index:2}
+  .final-btns,#finalOverlay h1{z-index:3}
+  .pod{width:20vw;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .pod .who{text-align:center;margin-bottom:1vh;opacity:0;animation:fadeUp .6s forwards}
+  .pod .who .a{font-size:6vw;line-height:1.1}
+  .pod .who .nm{font-size:2.2vw;font-weight:900}
+  .pod .who .sc{font-size:1.4vw;opacity:.85}
+  .pod .bar{width:100%;border-radius:18px 18px 0 0;display:flex;flex-direction:column;align-items:center;padding-top:2vh;
+            transform:translateY(100%);animation:rise .9s cubic-bezier(.2,.9,.3,1) forwards}
+  .pod .bar .rk{font-size:4vw;font-weight:900}
+  .pod .bar .bn{margin-top:1vh;background:#fff;color:var(--ink);border-radius:999px;padding:.3em 1em;font-size:1.5vw;font-weight:900}
+  .pod.p1 .bar{height:34vh;background:linear-gradient(#ffd54a,#e0a100);animation-delay:1.6s}
+  .pod.p2 .bar{height:25vh;background:linear-gradient(#d9e1ea,#9fadbd);animation-delay:.9s}
+  .pod.p3 .bar{height:18vh;background:linear-gradient(#f0a76c,#c56a2a);animation-delay:.2s}
+  .pod.p1 .who{animation-delay:2.4s} .pod.p2 .who{animation-delay:1.7s} .pod.p3 .who{animation-delay:1s}
+  @keyframes rise{to{transform:translateY(0)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+  .final-btns{position:absolute;top:13vh;display:flex;gap:1vw}
+  .final-btns .btn{font-size:1.4vw}
+  .confetti{position:absolute;top:-8vh;font-size:2.4vw;animation:fall linear infinite;pointer-events:none}
+  @keyframes fall{to{transform:translateY(120vh) rotate(540deg)}}
+  #v-setup .card{max-width:640px;text-align:left;line-height:1.8}
+  #v-setup code{background:#eef2f7;padding:1px 6px;border-radius:6px}
+</style>
+</head>
+<body>
+
+<!-- 尚未設定 Firebase 時的提示 -->
+<div class="view center" id="v-setup">
+  <div class="card">
+    <h2>⚙️ 尚未完成 Firebase 設定</h2>
+    <p id="setupMsg">請用記事本開啟這個 HTML 檔，找到最上方的 <code>FIREBASE_CONFIG</code>，把 Firebase 主控台提供的設定值貼上後再重新整理。</p>
+  </div>
+</div>
+
+<!-- ═════════ 學生手機端 ═════════ -->
+<div class="s-top" id="sTop">
+  <div class="who"><span id="sTopAv"></span><span id="sTopName"></span></div>
+  <div class="pts"><span id="sTopScore">0</span> 分</div>
+</div>
+
+<div class="view" id="s-login">
+  <div class="card">
+    <h1>🏁 期末闖關賽跑</h1>
+    <div class="sub">健康與護理｜選班級、輸入座號就能加入</div>
+    <label class="f">班級</label>
+    <select id="selClass"></select>
+    <label class="f">座號</label>
+    <input type="number" id="inpSeat" inputmode="numeric" pattern="[0-9]*" placeholder="例如 7">
+    <label class="f">姓名（自動帶入，無法修改）</label>
+    <div class="namebox idle" id="nameBox">請先輸入座號</div>
+    <label class="f">選一個頭像</label>
+    <div class="avgrid" id="avGrid"></div>
+    <button class="btn" id="joinBtn" disabled>確認加入</button>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+</div>
+
+<div class="view center" id="s-wait">
+  <div class="big-emoji pulse" id="waitAv">🏃</div>
+  <div class="h-big">加入成功！</div>
+  <div class="h-sub">請看投影幕，等待老師開始比賽<br>手機請保持亮著、不要關閉這個頁面</div>
+</div>
+
+<div class="view center" id="s-ready">
+  <div class="h-big" id="readyTitle">第 1 題</div>
+  <div class="count-num" id="readyNum">3</div>
+  <div class="h-sub">準備好，看投影幕上的題目！</div>
+</div>
+
+<div class="view" id="s-answer">
+  <div class="s-qbar"><span id="sQNum">第 1 題</span><span class="t" id="sTimer">20</span></div>
+  <div class="s-qtext" id="sQText"></div>
+  <div class="s-opts" id="sOpts"></div>
+</div>
+
+<div class="view center" id="s-sent">
+  <div class="big-emoji pulse" id="sentEmoji">📨</div>
+  <div class="h-big" id="sentTitle">答案已送出！</div>
+  <div class="h-sub">等待其他同學作答…</div>
+</div>
+
+<div class="view" id="s-result">
+  <div class="res-head" id="resHead"></div>
+  <div class="res-gain" id="resGain"></div>
+  <div class="res-row">
+    <div><small>目前總分</small><b id="resScore">0</b></div>
+    <div><small>目前班排名</small><b id="resRank">-</b></div>
+  </div>
+  <div class="explain">
+    <span class="tag">簡報重點解析</span>
+    <div class="ans" id="resAns"></div>
+    <div id="resExp"></div>
+  </div>
+</div>
+
+<div class="view center" id="s-final">
+  <div class="big-emoji" id="finEmoji">🏁</div>
+  <div class="h-big" id="finTitle"></div>
+  <div class="h-sub" id="finSub"></div>
+</div>
+
+<!-- ═════════ 教師投影幕端 ═════════ -->
+<div class="view center" id="h-gate">
+  <div class="card">
+    <h2 style="margin-bottom:10px">👩‍🏫 教師端登入</h2>
+    <input type="password" id="gatePin" placeholder="請輸入教師密碼">
+    <button class="btn" id="gateBtn" style="width:100%;margin-top:14px;font-size:20px">進入</button>
+    <div class="msg" id="gateMsg"></div>
+  </div>
+</div>
+
+<div class="view center" id="h-class">
+  <h1 style="font-size:44px">🏁 期末考全班同步闖關賽跑</h1>
+  <p style="font-size:24px;opacity:.85;margin-top:10px">請選擇要進行比賽的班級</p>
+  <div class="grid" id="classGrid"></div>
+</div>
+
+<div class="view" id="h-lobby">
+  <div class="lob-left">
+    <h1>📱 掃描 QR Code 加入</h1>
+    <div class="cls" id="lobCls"></div>
+    <div id="qrBox"></div>
+    <div class="lob-url" id="lobUrl"></div>
+  </div>
+  <div class="lob-right">
+    <div class="lob-bar">
+      <div class="n">已加入 <span id="lobN">0</span> 人</div>
+      <button class="btn ghost" id="switchBtn">↩ 換班級</button>
+      <button class="btn ghost" id="clearBtn">清空已加入學生</button>
+      <button class="btn warn" id="startBtn" disabled>▶ 開始遊戲</button>
+    </div>
+    <div id="lobbyList"></div>
+  </div>
+</div>
+
+<div class="view" id="h-game">
+  <div class="g-head">
+    <div class="timer" id="hTimer"><span id="hTimerNum">20</span></div>
+    <div class="qn" id="hQNum"></div>
+    <div class="cnt">已作答 <b id="hCnt">0</b> / <span id="hTot">0</span> 人 <span id="hOff" style="opacity:.7;font-size:.8em"></span></div>
+  </div>
+  <div class="g-q" id="hQText"></div>
+  <div class="g-opts" id="hOpts"></div>
+  <div class="g-mid">
+    <div class="g-exp" id="hExp"></div>
+    <button class="btn warn" id="nextBtn">下一題 ▶</button>
+  </div>
+  <div id="track"></div>
+</div>
+
+<div id="finalOverlay">
+  <h1>🏆 頒獎典禮 🏆</h1>
+  <div class="final-btns">
+    <button class="btn" id="csvBtn">⬇ 匯出加分 CSV</button>
+    <button class="btn ghost" id="againBtn">↩ 回到大廳（保留學生）</button>
+  </div>
+  <div class="podium" id="podium"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+(function(){
+"use strict";
+/* ───────── 共用工具 ───────── */
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const IS_HOST = params.get("role") === "host";
+const T_MS = QUESTION_SECONDS * 1000, LEAD_MS = READY_SECONDS * 1000, N = QUIZ_DATA.length;
+const SHAPES = ["▲","◆","●","■"];
+let db = null, offset = 0, TS = null;
+const now = () => Date.now() + offset;                     // 與 Firebase 伺服器對時後的時間
+const seatKey = n => "s" + Number(n);
+const fmt = n => Number(n || 0).toLocaleString("en-US");
+function show(id){ document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === id)); }
+function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text !== undefined) e.textContent = text; return e; }
+function rosterName(cls, seat){
+  const r = STUDENT_ROSTER[cls]; if(!r || seat === "" || seat === null) return null;
+  const n = Number(seat); if(!Number.isInteger(n) || n <= 0) return null;
+  for(const k of Object.keys(r)){ if(Number(k) === n) return r[k]; }
+  return null;
+}
+
+/* ───────── 啟動 ───────── */
+function boot(){
+  if(typeof firebase === "undefined"){
+    $("setupMsg").textContent = "無法載入 Firebase 程式庫，請確認網路連線後重新整理。"; show("v-setup"); return;
+  }
+  if(!/^https:\/\//.test(FIREBASE_CONFIG.databaseURL || "")){ show("v-setup"); return; }
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    TS = firebase.database.ServerValue.TIMESTAMP;
+  }catch(e){
+    $("setupMsg").textContent = "Firebase 設定有誤：" + e.message; show("v-setup"); return;
+  }
+  db.ref(".info/serverTimeOffset").on("value", s => { offset = s.val() || 0; });
+  if(IS_HOST) hostBoot(); else studentBoot();
+}
+
+/* ══════════════════════════════════════════════
+   教師投影幕端
+   ══════════════════════════════════════════════ */
+const H = { classId:null, ref:null, state:null, players:{}, answers:{}, revealing:false, timer:null, lanes:{}, podiumShown:false, clearArmed:false };
+
+function hostBoot(){
+  document.body.classList.add("host");
+  $("gateBtn").onclick = () => {
+    if($("gatePin").value === String(HOST_PIN)){ sessionStorage.setItem("race_host_ok","1"); hostClassPick(); }
+    else $("gateMsg").textContent = "密碼不正確";
+  };
+  $("gatePin").addEventListener("keydown", e => { if(e.key === "Enter") $("gateBtn").click(); });
+  $("startBtn").onclick = hostStart;
+  $("nextBtn").onclick = hostNext;
+  $("csvBtn").onclick = exportCSV;
+  $("againBtn").onclick = () => H.ref.child("state").set({ phase:"lobby", qIndex:0 });
+  $("switchBtn").onclick = () => { hostLeave(); hostClassPick(); };
+  $("clearBtn").onclick = () => {
+    if(!H.clearArmed){
+      H.clearArmed = true; $("clearBtn").textContent = "再按一次確認清空";
+      setTimeout(() => { H.clearArmed = false; $("clearBtn").textContent = "清空已加入學生"; }, 3000);
+    }else{
+      H.clearArmed = false; $("clearBtn").textContent = "清空已加入學生";
+      H.ref.set({ state:{ phase:"lobby", qIndex:0 } });
+    }
+  };
+  window.addEventListener("resize", () => { if(H.state && H.state.phase !== "lobby") renderTrack(); });
+  if(sessionStorage.getItem("race_host_ok") === "1") hostClassPick(); else show("h-gate");
+}
+
+function hostClassPick(){
+  const g = $("classGrid"); g.innerHTML = "";
+  Object.keys(STUDENT_ROSTER).forEach(c => {
+    const b = el("button", "btn", c); b.onclick = () => hostEnter(c); g.appendChild(b);
+  });
+  show("h-class");
+}
+
+function hostLeave(){
+  if(H.ref){ H.ref.child("state").off(); H.ref.child("players").off(); H.ref.child("answers").off(); }
+  if(H.timer) clearInterval(H.timer);
+  H.ref = null; H.state = null; H.players = {}; H.answers = {}; H.lanes = {}; H.podiumShown = false;
+  $("track").innerHTML = ""; $("finalOverlay").classList.remove("on");
+}
+
+function hostEnter(c){
+  hostLeave();
+  H.classId = c; H.ref = db.ref("race/" + c);
+  // 學生加入用的網址（去掉 ?role=host，帶上班級）
+  const url = location.origin + location.pathname + "?class=" + encodeURIComponent(c);
+  $("lobCls").textContent = c + " 班";
+  $("lobUrl").textContent = url;
+  const box = $("qrBox"); box.innerHTML = "";
+  if(typeof QRCode !== "undefined") new QRCode(box, { text:url, width:400, height:400, correctLevel:QRCode.CorrectLevel.M });
+  else box.textContent = "QR Code 程式庫載入失敗";
+
+  H.ref.child("state").on("value", s => {
+    H.state = s.val();
+    if(!H.state){ H.ref.child("state").set({ phase:"lobby", qIndex:0 }); return; }
+    hostRender();
+  });
+  H.ref.child("players").on("value", s => {
+    const v = s.val() || {}; H.players = {};
+    Object.keys(v).forEach(k => { if(v[k] && v[k].name) H.players[k] = v[k]; });   // 過濾不完整的殘留資料
+    hostRender(); hostCheckAll();
+  });
+  H.ref.child("answers").on("value", s => { H.answers = s.val() || {}; hostRender(); hostCheckAll(); });
+  H.timer = setInterval(hostTick, 100);
+}
+
+function playersList(){
+  return Object.keys(H.players).map(k => Object.assign({ key:k, seat:Number(k.slice(1)) }, H.players[k]))
+               .sort((a,b) => a.seat - b.seat);
+}
+function rankList(){
+  const l = playersList().sort((a,b) => (b.score||0) - (a.score||0) || a.seat - b.seat);
+  l.forEach((p,i) => { p.rank = i + 1; p.bonus = (p.score > 0 && BONUS[i]) ? BONUS[i] : 0; });
+  return l;
+}
+
+function hostRender(){
+  const st = H.state; if(!st) return;
+  if(st.phase === "lobby"){
+    $("finalOverlay").classList.remove("on"); H.podiumShown = false;
+    show("h-lobby"); renderLobby(); return;
+  }
+  show("h-game"); renderGame();
+  if(st.phase === "final"){
+    if(!H.podiumShown){ H.podiumShown = true; renderPodium(); $("finalOverlay").classList.add("on"); }
+  }else{ $("finalOverlay").classList.remove("on"); H.podiumShown = false; }
+}
+
+function renderLobby(){
+  const list = playersList(), box = $("lobbyList");
+  $("lobN").textContent = list.length;
+  $("startBtn").disabled = list.length === 0;
+  box.innerHTML = "";
+  if(!list.length){ box.appendChild(el("div", "empty", "等待學生掃描 QR Code 加入…")); return; }
+  list.forEach(p => {
+    const c = el("div", "chip" + (p.online ? "" : " off"));
+    c.appendChild(el("div", "a", p.avatar));
+    c.appendChild(el("div", "nm", p.seat + " " + p.name));
+    const x = el("button", "x", "✕"); x.title = "移出這位學生";
+    x.onclick = () => H.ref.child("players/" + p.key).remove();
+    c.appendChild(x); box.appendChild(c);
+  });
+}
+
+function renderGame(){
+  const st = H.state, qi = st.qIndex || 0, q = QUIZ_DATA[qi]; if(!q) return;
+  const revealed = st.phase !== "question";
+  const ans = H.answers["q" + qi] || {};
+  const list = playersList();
+  $("h-game").classList.toggle("revealed", revealed);
+  if(revealed) $("h-game").classList.remove("ready");
+  $("hQNum").textContent = "第 " + (qi + 1) + " / " + N + " 題";
+  $("hQText").textContent = q.question;
+  const counts = [0,0,0,0]; let answered = 0;
+  list.forEach(p => { const a = ans[p.key]; if(a){ answered++; if(counts[a.choice] !== undefined) counts[a.choice]++; } });
+  const box = $("hOpts");
+  if(box.children.length !== 4){
+    box.innerHTML = "";
+    for(let i = 0; i < 4; i++){
+      const o = el("div", "g-opt o" + i);
+      o.appendChild(el("span", "shape", SHAPES[i])); o.appendChild(el("span", "tx")); o.appendChild(el("span", "num"));
+      box.appendChild(o);
+    }
+  }
+  for(let i = 0; i < 4; i++){
+    const o = box.children[i];
+    o.querySelector(".tx").textContent = q.options[i];
+    o.querySelector(".num").textContent = counts[i] + " 人";
+    o.classList.toggle("correct", revealed && i === q.answer);
+    o.classList.toggle("dim", revealed && i !== q.answer);
+  }
+  $("hCnt").textContent = answered; $("hTot").textContent = list.length;
+  const off = list.filter(p => !p.online).length;
+  $("hOff").textContent = off ? "（離線 " + off + "）" : "";
+  $("hExp").innerHTML = ""; const b = el("b", "", "重點解析｜"); $("hExp").appendChild(b);
+  $("hExp").appendChild(document.createTextNode(q.explain || ""));
+  $("nextBtn").textContent = (qi + 1 >= N) ? "🏆 公布最終成績" : "下一題 ▶";
+  if(revealed){ $("hTimerNum").textContent = "✓"; $("hTimer").style.setProperty("--p", 0); $("hTimer").classList.remove("hot"); }
+  renderTrack();
+}
+
+function renderTrack(){
+  const st = H.state, track = $("track"), list = playersList(), n = list.length;
+  const cols = n <= 12 ? 1 : n <= 26 ? 2 : 3, rows = Math.max(1, Math.ceil(n / cols));
+  track.style.gridTemplateColumns = "repeat(" + cols + ",1fr)";
+  track.style.gridTemplateRows = "repeat(" + rows + ",1fr)";
+  const h = track.clientHeight - 24;
+  if(h > 0) track.style.setProperty("--lh", Math.max(16, Math.min(56, (h - (rows - 1) * 4) / rows)) + "px");
+  const ans = (st && st.phase === "question") ? (H.answers["q" + st.qIndex] || {}) : {};
+  const max = N * SCORE_MAX, alive = {};
+  list.forEach(p => {
+    alive[p.key] = true;
+    let lane = H.lanes[p.key];
+    if(!lane){
+      lane = el("div", "lane"); const r = el("div", "runner");
+      const nm = el("span", "nm"); nm.appendChild(document.createTextNode("")); nm.appendChild(el("i"));
+      r.appendChild(nm); r.appendChild(el("span", "av")); lane.appendChild(r);
+      lane.style.order = p.seat; track.appendChild(lane); H.lanes[p.key] = lane;
+    }
+    lane.querySelector(".nm").firstChild.nodeValue = p.name;
+    lane.querySelector(".nm i").textContent = fmt(p.score);
+    lane.querySelector(".av").textContent = p.avatar;
+    lane.classList.toggle("done", !!ans[p.key]);
+    lane.classList.toggle("off", !p.online);
+    const pct = Math.max(0, Math.min(1, (p.score || 0) / max));
+    lane.querySelector(".runner").style.left = "calc((100% - var(--rw) - " + "var(--lh) * .6) * " + pct.toFixed(4) + ")";
+  });
+  Object.keys(H.lanes).forEach(k => { if(!alive[k]){ H.lanes[k].remove(); delete H.lanes[k]; } });
+}
+
+function hostTick(){
+  const st = H.state; if(!st || st.phase !== "question" || !st.startAt) return;
+  const es = st.startAt + LEAD_MS, n = now(), g = $("h-game"), t = $("hTimer");
+  if(n < es){
+    g.classList.add("ready"); $("hTimerNum").textContent = Math.ceil((es - n) / 1000);
+    t.style.setProperty("--p", 100); t.classList.remove("hot");
+  }else{
+    g.classList.remove("ready");
+    const rem = Math.max(0, es + T_MS - n);
+    $("hTimerNum").textContent = Math.ceil(rem / 1000);
+    t.style.setProperty("--p", (rem / T_MS * 100).toFixed(1));
+    t.classList.toggle("hot", rem <= 5000);
+    if(rem <= 0) hostReveal();
+  }
+}
+
+/* 全班在線學生都作答完畢 → 提前結算 */
+function hostCheckAll(){
+  const st = H.state; if(!st || st.phase !== "question" || !st.startAt) return;
+  if(now() < st.startAt + LEAD_MS) return;
+  const ans = H.answers["q" + st.qIndex] || {};
+  const online = playersList().filter(p => p.online);
+  if(online.length && online.every(p => ans[p.key])) hostReveal();
+}
+
+function hostStart(){
+  const upd = { answers:null, state:{ phase:"question", qIndex:0, startAt:TS } };
+  playersList().forEach(p => {
+    const b = "players/" + p.key + "/";
+    upd[b + "score"] = 0; upd[b + "gains"] = null; upd[b + "rank"] = null;
+    upd[b + "lastGain"] = null; upd[b + "lastCorrect"] = null; upd[b + "lastAnswered"] = null;
+  });
+  H.ref.update(upd);
+}
+
+function hostNext(){
+  const st = H.state; if(!st || st.phase !== "reveal") return;
+  if(st.qIndex + 1 >= N) H.ref.child("state/phase").set("final");
+  else H.ref.child("state").set({ phase:"question", qIndex:st.qIndex + 1, startAt:TS });
+}
+
+/* 結算本題：依作答速度計分（答對 600～1000，答錯 0），並寫回每位學生的總分與名次 */
+function hostReveal(){
+  const st = H.state;
+  if(H.revealing || !st || st.phase !== "question") return;
+  H.revealing = true;
+  const qi = st.qIndex, q = QUIZ_DATA[qi], ans = H.answers["q" + qi] || {}, es = st.startAt + LEAD_MS;
+  const upd = { "state/phase":"reveal" }, totals = [];
+  playersList().forEach(p => {
+    const a = ans[p.key]; let gain = 0, correct = false;
+    if(a && a.choice === q.answer){
+      const used = Math.max(0, Math.min(T_MS, (a.t || es) - es));
+      gain = Math.round(SCORE_MAX - (SCORE_MAX - SCORE_MIN) * used / T_MS); correct = true;
+    }
+    const gains = Object.assign({}, p.gains || {}); gains["q" + qi] = gain;       // 以各題得分重新加總，重複結算也不會多加
+    const score = Object.keys(gains).reduce((s,k) => s + (gains[k] || 0), 0);
+    const b = "players/" + p.key + "/";
+    upd[b + "gains/q" + qi] = gain; upd[b + "score"] = score;
+    upd[b + "lastGain"] = gain; upd[b + "lastCorrect"] = correct; upd[b + "lastAnswered"] = !!a;
+    totals.push({ key:p.key, seat:p.seat, score:score });
+  });
+  totals.sort((a,b) => b.score - a.score || a.seat - b.seat)
+        .forEach((t,i) => { upd["players/" + t.key + "/rank"] = i + 1; });
+  H.ref.update(upd).then(() => { H.revealing = false; }, () => { H.revealing = false; });
+}
+
+function renderPodium(){
+  const top = rankList().slice(0, 3), box = $("podium"); box.innerHTML = "";
+  [[1,"p2"],[0,"p1"],[2,"p3"]].forEach(pair => {
+    const p = top[pair[0]], col = el("div", "pod " + pair[1]);
+    if(p){
+      const who = el("div", "who");
+      who.appendChild(el("div", "a", p.avatar));
+      who.appendChild(el("div", "nm", p.seat + " 號 " + p.name));
+      who.appendChild(el("div", "sc", fmt(p.score) + " 分"));
+      col.appendChild(who);
+      const bar = el("div", "bar");
+      bar.appendChild(el("div", "rk", "第 " + p.rank + " 名"));
+      bar.appendChild(el("div", "bn", p.bonus ? "學期總成績 +" + p.bonus + " 分" : "再接再厲"));
+      col.appendChild(bar);
+    }
+    box.appendChild(col);
+  });
+  document.querySelectorAll(".confetti").forEach(c => c.remove());
+  const bits = ["🎉","🎊","⭐","🏅","❤️‍🩹","🩺"];
+  for(let i = 0; i < 36; i++){
+    const c = el("span", "confetti", bits[i % bits.length]);
+    c.style.left = (Math.random() * 100) + "vw";
+    c.style.animationDuration = (4 + Math.random() * 5) + "s";
+    c.style.animationDelay = (Math.random() * 5) + "s";
+    $("finalOverlay").appendChild(c);
+  }
+}
+
+/* 匯出加分 CSV（UTF-8 含 BOM，Excel 直接開啟不亂碼）；名單內未參加的學生也會列出 */
+function exportCSV(){
+  const map = {}; rankList().forEach(p => { map[p.seat] = p; });
+  const roster = STUDENT_ROSTER[H.classId] || {};
+  const rows = [["班級","座號","姓名","總分","名次","學期加分"]];
+  Object.keys(roster).sort((a,b) => Number(a) - Number(b)).forEach(seat => {
+    const p = map[Number(seat)];
+    rows.push([H.classId, Number(seat), roster[seat], p ? (p.score || 0) : 0, p ? p.rank : "未參加", p ? p.bonus : 0]);
+  });
+  const cell = v => { const s = String(v); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const csv = "﻿" + rows.map(r => r.map(cell).join(",")).join("\r\n");
+  const d = new Date(), ymd = d.getFullYear() + String(d.getMonth() + 1).padStart(2,"0") + String(d.getDate()).padStart(2,"0");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8" }));
+  a.download = "期末闖關加分_" + H.classId + "_" + ymd + ".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/* ══════════════════════════════════════════════
+   學生手機端
+   ══════════════════════════════════════════════ */
+const S = { session:null, ref:null, meRef:null, ansRef:null, state:null, me:null, myAnswer:"loading",
+            qi:-1, avatar:null, attached:false, view:"", drawn:"" };
+const LS_KEY = "race_session_v1", LS_TOKEN = "race_token_v1";
+
+function myToken(){
+  let t = null;
+  try{ t = localStorage.getItem(LS_TOKEN); }catch(e){}
+  if(!t){ t = Math.random().toString(36).slice(2) + Date.now().toString(36); try{ localStorage.setItem(LS_TOKEN, t); }catch(e){} }
+  return t;
+}
+
+function studentBoot(){
+  document.body.classList.add("student");
+  const sel = $("selClass");
+  Object.keys(STUDENT_ROSTER).forEach(c => { const o = el("option", "", c); o.value = c; sel.appendChild(o); });
+  const pre = params.get("class"); if(pre && STUDENT_ROSTER[pre]) sel.value = pre;
+  const grid = $("avGrid");
+  AVATARS.forEach(a => {
+    const b = el("button", "", a); b.type = "button";
+    b.onclick = () => { S.avatar = a; grid.querySelectorAll("button").forEach(x => x.classList.toggle("sel", x === b)); checkLogin(); };
+    grid.appendChild(b);
+  });
+  sel.onchange = checkLogin; $("inpSeat").oninput = checkLogin; $("joinBtn").onclick = studentJoin;
+  db.ref(".info/connected").on("value", s => { if(s.val()) setPresence(); });
+  setInterval(studentRender, 200);
+
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(LS_KEY) || "null"); }catch(e){}
+  if(saved && STUDENT_ROSTER[saved.classId]){
+    db.ref("race/" + saved.classId + "/players/" + seatKey(saved.seat)).once("value").then(s => {
+      const v = s.val();
+      if(v && v.name && v.token === saved.token){ S.session = saved; studentAttach(); }
+      else{ try{ localStorage.removeItem(LS_KEY); }catch(e){} show("s-login"); }
+    }, () => show("s-login"));
+  }else show("s-login");
+}
+
+function checkLogin(){
+  const c = $("selClass").value, seat = $("inpSeat").value.trim(), box = $("nameBox");
+  const name = rosterName(c, seat);
+  if(seat === ""){ box.className = "namebox idle"; box.textContent = "請先輸入座號"; }
+  else if(!name){ box.className = "namebox bad"; box.textContent = "查無此座號，請確認班級與座號"; }
+  else{ box.className = "namebox"; box.textContent = name; }
+  $("joinBtn").disabled = !(name && S.avatar);
+  $("loginMsg").textContent = "";
+  return name;
+}
+
+function studentJoin(){
+  const c = $("selClass").value, seat = Number($("inpSeat").value.trim()), name = checkLogin();
+  if(!name || !S.avatar) return;
+  const token = myToken(), avatar = S.avatar;
+  $("joinBtn").disabled = true; $("loginMsg").textContent = "連線中…";
+  db.ref("race/" + c + "/players/" + seatKey(seat)).transaction(cur => {
+    if(cur && cur.name && cur.token !== token) return;            // 這個座號已被別支手機登入 → 中止
+    const base = (cur && cur.name) ? cur : { score:0, joinedAt:TS };
+    return Object.assign({}, base, { name:name, avatar:avatar, token:token, online:true });
+  }, (err, committed) => {
+    if(err){ $("loginMsg").textContent = "連線失敗，請再試一次"; $("joinBtn").disabled = false; }
+    else if(!committed){ $("loginMsg").textContent = "這個座號已經有人登入了！如果不是你，請舉手告訴老師。"; $("joinBtn").disabled = false; }
+    else{
+      S.session = { classId:c, seat:seat, token:token };
+      try{ localStorage.setItem(LS_KEY, JSON.stringify(S.session)); }catch(e){}
+      studentAttach();
+    }
+  }, false);
+}
+
+function setPresence(){
+  if(!S.attached || !S.meRef) return;
+  const o = S.meRef.child("online"); o.onDisconnect().set(false); o.set(true);
+}
+
+function studentAttach(){
+  const ss = S.session;
+  S.ref = db.ref("race/" + ss.classId); S.meRef = S.ref.child("players/" + seatKey(ss.seat));
+  S.attached = true; S.qi = -1; S.myAnswer = "loading"; setPresence();
+  S.meRef.on("value", s => {
+    const v = s.val();
+    if(!v || !v.name || v.token !== ss.token){ studentLeave("你已被移出或比賽已重置，請重新加入。"); return; }
+    S.me = v;
+    if(v.online === false) S.meRef.child("online").set(true);   // 同一支手機開兩個分頁、關掉其中一個時，自動恢復在線
+    studentRender();
+  });
+  S.ref.child("state").on("value", s => { S.state = s.val() || { phase:"lobby", qIndex:0 }; watchAnswer(); studentRender(); });
+}
+
+function studentLeave(msg){
+  if(!S.attached) return;
+  S.attached = false;
+  if(S.meRef){ S.meRef.off(); S.meRef.child("online").onDisconnect().cancel(); }
+  if(S.ref) S.ref.child("state").off();
+  if(S.ansRef) S.ansRef.off();
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  S.session = null; S.me = null; S.state = null; S.ansRef = null; S.meRef = null; S.ref = null; S.view = ""; S.drawn = "";
+  document.body.classList.remove("ok","ng"); $("sTop").classList.remove("on");
+  show("s-login"); checkLogin(); $("loginMsg").textContent = msg || "";
+}
+
+/* 監聽自己這一題的作答（重新整理手機後也不會重複作答） */
+function watchAnswer(){
+  const st = S.state; if(!st || st.phase === "lobby"){ S.qi = -1; return; }
+  if(st.qIndex === S.qi && S.ansRef) return;
+  if(S.ansRef) S.ansRef.off();
+  S.qi = st.qIndex; S.myAnswer = "loading";
+  S.ansRef = S.ref.child("answers/q" + S.qi + "/" + seatKey(S.session.seat));
+  S.ansRef.on("value", s => { S.myAnswer = s.val(); studentRender(); });
+}
+
+function submitAnswer(i){
+  if(S.myAnswer !== null || !S.ansRef || !S.state || S.state.phase !== "question") return;
+  S.myAnswer = { choice:i };
+  S.ansRef.set({ choice:i, t:TS });
+  studentRender();
+}
+
+function studentRender(){
+  if(!S.attached || !S.me || !S.state) return;
+  const st = S.state, me = S.me, qi = st.qIndex || 0, q = QUIZ_DATA[qi], n = now();
+  let view = "s-wait";
+  if(st.phase === "question" && q){
+    const es = (st.startAt || n) + LEAD_MS;
+    if(!st.startAt || n < es) view = "s-ready";
+    else if(S.myAnswer === null && n < es + T_MS) view = "s-answer";
+    else view = "s-sent";
+    if(view === "s-ready"){ $("readyTitle").textContent = "第 " + (qi + 1) + " 題"; $("readyNum").textContent = Math.max(1, Math.ceil((es - n) / 1000)); }
+    if(view === "s-answer") $("sTimer").textContent = Math.ceil((es + T_MS - n) / 1000);
+  }else if(st.phase === "reveal" && q) view = "s-result";
+  else if(st.phase === "final") view = "s-final";
+
+  $("sTop").classList.add("on");
+  $("sTopAv").textContent = me.avatar; $("sTopName").textContent = S.session.seat + " " + me.name;
+  $("sTopScore").textContent = fmt(me.score);
+
+  const sig = view + "|" + qi + "|" + (me.lastGain || 0) + "|" + (me.rank || 0) + "|" + (S.myAnswer && S.myAnswer !== "loading" ? 1 : 0);
+  if(sig !== S.drawn){
+    S.drawn = sig;
+    document.body.classList.remove("ok","ng");
+    if(view === "s-wait") $("waitAv").textContent = me.avatar;
+    if(view === "s-answer"){
+      $("sQNum").textContent = "第 " + (qi + 1) + " / " + N + " 題"; $("sQText").textContent = q.question;
+      const box = $("sOpts"); box.innerHTML = "";
+      q.options.forEach((t,i) => {
+        const b = el("button", "o" + i); b.type = "button";
+        b.appendChild(el("span", "shape", SHAPES[i])); b.appendChild(el("span", "", t));
+        b.onclick = () => submitAnswer(i); box.appendChild(b);
+      });
+    }
+    if(view === "s-sent"){
+      const did = S.myAnswer && S.myAnswer !== "loading";
+      $("sentEmoji").textContent = did ? "📨" : "⏰";
+      $("sentTitle").textContent = did ? "答案已送出！" : (S.myAnswer === "loading" ? "同步中…" : "時間到！");
+    }
+    if(view === "s-result"){
+      const ok = !!me.lastCorrect;
+      document.body.classList.add(ok ? "ok" : "ng");
+      $("resHead").textContent = ok ? "✅ 答對了！" : (me.lastAnswered ? "❌ 答錯了" : "⏰ 來不及作答");
+      $("resGain").textContent = "+" + fmt(me.lastGain);
+      $("resScore").textContent = fmt(me.score);
+      $("resRank").textContent = me.rank ? "第 " + me.rank + " 名" : "-";
+      $("resAns").textContent = "正確答案：" + SHAPES[q.answer] + " " + q.options[q.answer];
+      $("resExp").textContent = q.explain || "";
+    }
+    if(view === "s-final"){
+      const bonus = (me.rank && me.score > 0 && BONUS[me.rank - 1]) ? BONUS[me.rank - 1] : 0;
+      $("finEmoji").textContent = bonus ? ["🥇","🥈","🥉"][me.rank - 1] : me.avatar;
+      $("finTitle").textContent = "最終成績：第 " + (me.rank || "-") + " 名";
+      $("finSub").innerHTML = "";
+      $("finSub").appendChild(document.createTextNode("總分 " + fmt(me.score) + " 分"));
+      $("finSub").appendChild(document.createElement("br"));
+      $("finSub").appendChild(document.createTextNode(bonus ? "🎉 恭喜！學期總成績 +" + bonus + " 分" : "辛苦了，謝謝你全力衝刺！"));
+    }
+  }
+  if(view !== S.view){ S.view = view; show(view); }
+}
+
+boot();
+})();
+</script>
+</body>
+</html>
